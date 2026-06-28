@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { PLANS, PlanKey } from './stripe';
 import { t } from './i18n';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 'placeholder');
 const FROM = process.env.EMAIL_FROM || 'TEJIONA AI Solutions <solutions@tejiona.com>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
