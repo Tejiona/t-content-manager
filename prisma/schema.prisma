@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Admin users (TEJIONA team) ───
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin") // admin | super_admin
+  lang      String   @default("fr")
+  createdAt DateTime @default(now())
+}
+
+// ─── Clients (subscribers) ───
+model Client {
+  id               String   @id @default(cuid())
+  stripeCustomerId String?  @unique
+  stripeSubId      String?  @unique
+  email            String   @unique
+  name             String
+  company          String?
+  industry         String?
+  city             String?
+  country          String?
+  phone            String?
+  lang             String   @default("fr") // fr | en
+  plan             String   @default("starter") // starter | growth
+  planStatus       String   @default("active") // active | past_due | canceled | trialing
+  brandDescription String?  @db.Text
+  tone             String   @default("professionnel")
+  keywords         String?
+  logoUrl          String?
+  onboardingToken  String?  @unique
+  onboardingDone   Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  socialAccounts SocialAccount[]
+  posts          Post[]
+  reports        Report[]
+  activities     Activity[]
+}
+
+// ─── Social media credentials (encrypted) ───
+model SocialAccount {
+  id           String   @id @default(cuid())
+  clientId     String
+  platform     String   // instagram | facebook | linkedin | x
+  accountName  String?
+  accessToken  String?  @db.Text // encrypted
+  refreshToken String?  @db.Text // encrypted
+  pageId       String?  // For Facebook pages / Instagram business
+  expiresAt    DateTime?
+  connected    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, platform])
+}
+
+// ─── Generated content / posts ───
+model Post {
+  id          String    @id @default(cuid())
+  clientId    String
+  platform    String    // instagram | facebook | linkedin | x
+  topic       String?
+  content     String    @db.Text
+  hashtags    String?
+  imageUrl    String?
+  status      String    @default("draft") // draft | scheduled | published | failed
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  errorMsg    String?
+  performance Json?     // { likes, comments, shares, reach, impressions }
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, status])
+  @@index([scheduledAt])
+}
+
+// ─── Performance reports ───
+model Report {
+  id           String   @id @default(cuid())
+  clientId     String
+  periodStart  DateTime
+  periodEnd    DateTime
+  type         String   @default("weekly") // weekly | biweekly | monthly
+  data         Json     // { totalPosts, platforms: {...}, topPosts, engagement }
+  pdfUrl       String?
+  sentAt       DateTime?
+  sendMode     String   @default("auto") // auto | manual
+  createdAt    DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+// ─── Activity log ───
+model Activity {
+  id        String   @id @default(cuid())
+  clientId  String?
+  adminId   String?
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+}
+
+// ─── App settings ───
+model Setting {
+  key   String @id
+  value String @db.Text
+}
