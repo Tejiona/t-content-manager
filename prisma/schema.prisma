@@ -4,7 +4,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  url       = env("TContentManagerSupabase_POSTGRES_PRISMA_URL")
+  directUrl = env("TContentManagerSupabase_POSTGRES_URL_NON_POOLING")
 }
 
 // ─── Admin users (TEJIONA team) ───
